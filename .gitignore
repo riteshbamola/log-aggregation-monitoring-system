@@ -1,0 +1,104 @@
+# =========================
+# 🔐 Application Config (ALL MODULES)
+# =========================
+
+# Ignore all application config files everywhere
+**/application.properties
+**/application.yml
+**/application.yaml
+
+# Allow template/example configs if needed
+!**/application-example.properties
+!**/application-example.yml
+
+# =========================
+# 🏗️ Build Outputs
+# =========================
+
+# Maven
+target/
+
+# Gradle
+build/
+.gradle/
+
+# Logs
+*.log
+logs/
+
+# =========================
+# ☕ Java
+# =========================
+
+*.class
+*.jar
+*.war
+*.ear
+
+# =========================
+# 💻 IDE / Editor Files
+# =========================
+
+# IntelliJ
+.idea/
+*.iml
+
+# VS Code
+.vscode/
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# =========================
+# 🧪 Temporary / OS Files
+# =========================
+
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# =========================
+# 🔑 Environment Files
+# =========================
+
+.env
+.env.*
+
+# =========================
+# 📦 Dependency directories (rare cases)
+# =========================
+
+node_modules/
+
+# =========================
+# 🚫 Misc unwanted files
+# =========================
+
+*.tmp
+*.bak
+*.cache
+
+# =========================
+# 🐳 Docker (optional)
+# =========================
+
+docker-compose.override.yml
+
+# =========================
+# 📊 Coverage / Reports
+# =========================
+
+coverage/
+*.exec
+
+# =========================
+# 🔒 Secrets (extra safety)
+# =========================
+
+secrets/
+*.key
+*.pem
