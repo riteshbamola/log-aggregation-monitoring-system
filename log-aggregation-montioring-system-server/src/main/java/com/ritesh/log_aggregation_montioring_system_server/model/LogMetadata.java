@@ -1,6 +1,7 @@
 package com.ritesh.log_aggregation_montioring_system_server.model;
 
 
+import com.ritesh.log_aggregation_montioring_system_server.enums.KafkaStatus;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -19,6 +20,6 @@ public class LogMetadata {
     private String traceId;
     private LocalDateTime timestamp;
     private Boolean indexed;
-    private Boolean kafkaAcked;
+    private KafkaStatus kafkaStatus;
     private LocalDateTime createdAt;
 }
