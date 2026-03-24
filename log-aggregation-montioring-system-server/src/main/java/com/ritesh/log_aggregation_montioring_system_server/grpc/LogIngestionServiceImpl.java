@@ -2,6 +2,7 @@ package com.ritesh.log_aggregation_montioring_system_server.grpc;
 
 import com.ritesh.log_aggregation_montioring_system_server.enums.KafkaStatus;
 import com.ritesh.log_aggregation_montioring_system_server.kafka.LogProducer;
+import com.ritesh.log_aggregation_montioring_system_server.model.LogDocument;
 import com.ritesh.log_aggregation_montioring_system_server.model.LogMetadata;
 import com.ritesh.log_aggregation_montioring_system_server.repository.LogMetadataRepository;
 import com.ritesh.log_aggregation_proto.LogRequest;
@@ -13,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.grpc.server.service.GrpcService;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Slf4j
@@ -94,15 +96,16 @@ public class LogIngestionServiceImpl extends LogServiceGrpc.LogServiceImplBase {
     }
 
     private LogMetadata buildLogMetaData(LogRequest request) {
-        LogMetadata logMetadata = new LogMetadata();
-        logMetadata.setLogId(request.getLogId());
-        logMetadata.setLevel(request.getLevel());
-        logMetadata.setServiceName(request.getServiceName());
-        logMetadata.setTraceId(request.getTraceId());
-        logMetadata.setTimestamp(LocalDateTime.parse(request.getTimestamp()));
-        logMetadata.setIndexed(false);
-        logMetadata.setKafkaStatus(KafkaStatus.PENDING);
-
-        return logMetadata;
+        return LogMetadata.builder()
+                .logId(request.getLogId())
+                .level(request.getLevel())
+                .serviceName(request.getServiceName())
+                .traceId(request.getTraceId())
+                .timestamp(request.getTimestamp().isBlank()
+                        ? Instant.now()
+                        : Instant.parse(request.getTimestamp()))
+                .indexed(false)
+                .kafkaStatus(KafkaStatus.PENDING)
+                .build();
     }
 }

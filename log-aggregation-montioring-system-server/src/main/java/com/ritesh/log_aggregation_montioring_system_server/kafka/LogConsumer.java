@@ -1,17 +1,44 @@
 package com.ritesh.log_aggregation_montioring_system_server.kafka;
 
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.ritesh.log_aggregation_montioring_system_server.elasticsearch.LogIndexService;
+import com.ritesh.log_aggregation_montioring_system_server.model.LogDocument;
+import com.ritesh.log_aggregation_proto.LogRequest;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 
+@Service
 public class LogConsumer {
 
+    @Autowired
+    private LogIndexService logIndexService;
+
     @KafkaListener(topics = "my_topic", groupId = "group_id")
-    public void consume(String message) {
-        System.out.println("Message received: " + message);
+    public void consumeLog(byte[] message) throws InvalidProtocolBufferException {
+        LogRequest logRequest = LogRequest.parseFrom(message);
+        LogDocument logDocument = buildLogDocument(logRequest);
+
+        logIndexService.saveIndex(logDocument);
+
+        System.out.println("Message received: " + logDocument);
     }
 
-    @KafkaListener(topics = "ASD", groupId = "group_id")
-    public void consumeLog(String message) {
-        System.out.println("Message received: " + message);
+
+    private LogDocument buildLogDocument(LogRequest logRequest) {
+        return LogDocument.builder()
+                .logId(logRequest.getLogId())
+                .level(logRequest.getLevel())
+                .serviceName(logRequest.getServiceName())
+                .traceId(logRequest.getTraceId())
+                .message(logRequest.getMessage())
+                .timestamp(logRequest.getTimestamp().isBlank()
+                        ? Instant.now()
+                        : Instant.parse(logRequest.getTimestamp()))
+                .build();
     }
+
+
 }

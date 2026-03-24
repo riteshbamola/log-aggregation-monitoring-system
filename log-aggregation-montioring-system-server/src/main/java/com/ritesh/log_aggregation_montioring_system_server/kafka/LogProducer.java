@@ -1,5 +1,6 @@
 package com.ritesh.log_aggregation_montioring_system_server.kafka;
 import com.ritesh.log_aggregation_montioring_system_server.enums.KafkaStatus;
+import com.ritesh.log_aggregation_montioring_system_server.model.LogDocument;
 import com.ritesh.log_aggregation_montioring_system_server.model.LogMetadata;
 import com.ritesh.log_aggregation_montioring_system_server.repository.LogMetadataRepository;
 import com.ritesh.log_aggregation_proto.LogRequest;
@@ -17,14 +18,14 @@ public class LogProducer {
 
 
     private static final String TOPIC = "my_topic";
-    private final KafkaTemplate<String, LogRequest> kafkaTemplate;
+    private final KafkaTemplate<String, byte[]> kafkaTemplate;
 
-    public LogProducer(KafkaTemplate<String, LogRequest> kafkaTemplate) {
+    public LogProducer(KafkaTemplate<String, byte[]> kafkaTemplate) {
         this.kafkaTemplate = kafkaTemplate;
     }
 
     public void sendMessage(LogRequest message, LogMetadata logMetadata) {
-        kafkaTemplate.send(TOPIC, message).whenComplete((result,ex) ->{
+        kafkaTemplate.send(TOPIC, logMetadata.getLogId(), message.toByteArray()).whenComplete((result,ex) ->{
             if(ex==null){
                 logMetadata.setKafkaStatus(KafkaStatus.SENT);
             }

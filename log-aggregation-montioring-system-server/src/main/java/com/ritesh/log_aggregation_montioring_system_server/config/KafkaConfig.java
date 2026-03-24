@@ -47,7 +47,7 @@ public class KafkaConfig {
     //producer beans
 
     @Bean
-    public ProducerFactory<String, LogRequest> producerFactory() {
+    public ProducerFactory<String, byte[]> producerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
@@ -55,7 +55,7 @@ public class KafkaConfig {
     }
 
     @Bean
-    public KafkaTemplate<String, LogRequest> kafkaTemplate() {
+    public KafkaTemplate<String, byte[]> kafkaTemplate() {
         return new KafkaTemplate<>(producerFactory());
     }
 }
