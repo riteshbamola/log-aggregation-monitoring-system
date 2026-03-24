@@ -106,4 +106,3 @@ public class LogIngestionServiceImpl extends LogServiceGrpc.LogServiceImplBase {
         };
     }
 }
-}
