@@ -33,7 +33,7 @@ public class LogIngestionServiceImpl extends LogServiceGrpc.LogServiceImplBase {
 
             logMetadataRepo.save(logMetadata);
 
-            //kafka publis
+            //kafka publish
 
             responseObserver.onNext(LogResponse.newBuilder()
                     .setLogId(logMetadata.getLogId())
@@ -78,8 +78,6 @@ public class LogIngestionServiceImpl extends LogServiceGrpc.LogServiceImplBase {
                     logMetadataRepo.save(logMetadata);
 
                     // Publish to Kafka
-
-
 
                     totalSuccess++;
 
