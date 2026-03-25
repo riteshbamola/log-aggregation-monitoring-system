@@ -17,7 +17,7 @@ A scalable backend system designed to **collect, process, and monitor logs in re
 
 ## 🏗️ Architecture
 
-![Architecture](./Architecture.png)
+![Architecture](./images/Architecture.png)
 
 **Flow:**
 
@@ -78,7 +78,7 @@ mvn spring-boot:run
 
 ### ✅ 1. Normal Processing Test (Baseline)
 
-![Normal Test](./NormalTest.png)
+![Normal Test](./images/NormalTest.png)
 
 **Description:**
 
@@ -99,7 +99,7 @@ mvn spring-boot:run
 
 ### 📦 2. Batch Processing Test (Optimization Step 1)
 
-![Batch Test](./BatchTest.png)
+![Batch Test](./images/BatchTest.png)
 
 **Logic:**
 
@@ -130,7 +130,7 @@ if(batch.size() >= 50){
 
 ### ⚡ 3. Concurrent Processing Test (Optimization Step 2)
 
-![Concurrent Test](./ConcurrentTest.png)
+![Concurrent Test](./images/ConcurrentTest.png)
 
 **Configuration:**
 
