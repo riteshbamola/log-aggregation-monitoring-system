@@ -20,10 +20,9 @@ message LogResponse {
   string error_code = 4;
 }
 message LogSummary {
-  int32  total_received = 1;
-  int32  total_success  = 2;
-  int32  total_failed   = 3;
-  string message        = 4;
+  int32  logs_sent = 1;
+  int32 logs_kafka  =2;
+  int32 logs_db=3;
 }
 
 service LogService {

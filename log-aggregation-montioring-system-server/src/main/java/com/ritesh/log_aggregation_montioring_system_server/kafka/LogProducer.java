@@ -34,6 +34,5 @@ public class LogProducer {
             }
             logMetadataRepo.save(logMetadata);
         });
-        System.out.println("Message sent: " + message);
     }
 }

@@ -57,24 +57,22 @@ public class LogIngestionServiceImpl extends LogServiceGrpc.LogServiceImplBase {
     public StreamObserver<LogRequest> bulkIngest(StreamObserver<LogSummary> responseObserver) {
         return new StreamObserver<LogRequest>() {
 
-            private int totalReceived = 0;
-            private int totalSuccess = 0;
-            private int totalFailed = 0;
+            private int logsReceived = 0;
+            private int logsinKafka = 0;
+            private int logsinDB=0;
 
             @Override
             public void onNext(LogRequest logRequest) {
-                totalReceived++;
+                logsReceived++;
 
                 try {
                     LogMetadata logMetadata = buildLogMetaData(logRequest);
-
-                    // Publish to Kafka
+                    logMetadataRepo.save(logMetadata);
+                    logsinDB++;
                     logProducer.sendMessage(logRequest,logMetadata);
-                    totalSuccess++;
+                    logsinKafka++;
 
-                } catch (Exception e) {
-                    totalFailed++;
-                }
+                } catch (Exception e) {}
             }
 
             @Override
@@ -85,10 +83,9 @@ public class LogIngestionServiceImpl extends LogServiceGrpc.LogServiceImplBase {
             @Override
             public void onCompleted() {
                 responseObserver.onNext(LogSummary.newBuilder()
-                        .setTotalReceived(totalReceived)
-                        .setTotalFailed(totalFailed)
-                        .setTotalSuccess(totalSuccess)
-                        .setMessage("Bulk ingestion complete")
+                                .setLogsDb(logsinDB)
+                                .setLogsKafka(logsinKafka)
+                                .setLogsSent(logsReceived)
                         .build());
                 responseObserver.onCompleted();
             }

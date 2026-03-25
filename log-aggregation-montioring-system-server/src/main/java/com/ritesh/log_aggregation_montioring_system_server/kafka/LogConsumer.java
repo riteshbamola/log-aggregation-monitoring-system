@@ -16,17 +16,28 @@ public class LogConsumer {
 
     @Autowired
     private LogIndexService logIndexService;
-
+    private long  start = 0;
+    private int count=0;
 
     @KafkaListener(topics = "my_topic", groupId = "group_id")
     public void consumeLog(byte[] message, Acknowledgment acknowledgment) {
-
         try {
+
+            if(count == 0){
+                start = System.currentTimeMillis();
+            }
+
             LogRequest logRequest = LogRequest.parseFrom(message);
             LogDocument logDocument = buildLogDocument(logRequest);
-
             logIndexService.saveIndex(logDocument);
             acknowledgment.acknowledge();
+            count++;
+
+            if(count >= 500){
+                long end = System.currentTimeMillis();
+                System.out.println("Time Taken : " + (end-start) + " ms");
+                System.out.println("Logs in ElasticSearch: "+ count);
+            }
 
         } catch (Exception e) {
             System.err.println("❌ FAILED: ");
