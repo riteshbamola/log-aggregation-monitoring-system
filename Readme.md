@@ -111,7 +111,7 @@ cd "../log-aggregation-montioring-system-server" && ./mvnw spring-boot:run
 **Description:**
 
 * Intended baseline: per-log indexing
-* In this repo, per-log indexing is disabled and batching is used (`batch.size() >= 50`)
+* In this repo, per-log indexing is used.
 
 **Result:**
 
