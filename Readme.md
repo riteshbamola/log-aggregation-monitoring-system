@@ -7,11 +7,21 @@ A scalable backend system designed to **collect, process, and monitor logs in re
 ## 🚀 Features
 
 * 📥 High-throughput log ingestion via **gRPC**
-* 🧵 Distributed messaging using **Apache Kafka**
-* ⚡ Concurrent log processing
-* 📦 Batch indexing for performance optimization
-* 🔍 Fast log querying using **Elasticsearch**
-* 📊 Monitoring-ready architecture
+* Unary RPC: `LogService.IngestLog(LogRequest) -> LogResponse`
+* Client-streaming RPC: `LogService.BulkIngest(stream LogRequest) -> LogSummary`
+* 🧵 Asynchronous decoupling using **Apache Kafka**
+* Kafka topic: `my_topic` (message key: `logId`)
+* Kafka consumer group: `group_id`
+* ⚡ High-throughput processing
+* Kafka listener container concurrency: `3`
+* Batching: flush to Elasticsearch when `batch.size() >= 50`
+* 💾 Metadata persistence using **PostgreSQL (Hibernate/JPA)**
+* Table: `log_metadata`
+* Tracks `kafkaStatus` as `PENDING / SENT / FAILED`
+* 🔎 Indexing readiness using **Elasticsearch**
+* Elasticsearch index: `logs`
+* Document mapping is defined in `LogDocument`
+* 📊 Interview-ready performance story: README includes measured baseline vs batch vs concurrent runs
 
 ---
 
@@ -21,19 +31,32 @@ A scalable backend system designed to **collect, process, and monitor logs in re
 
 **Flow:**
 
-* **gRPC Producer → Kafka Topic → Kafka Consumer → Elasticsearch**
-* Metadata stored via **Hibernate (DB)**
-* Logs indexed for fast search & monitoring
+* `LogService.IngestLog` / `LogService.BulkIngest` (gRPC) receive a `LogRequest`
+* The server saves `LogMetadata` into PostgreSQL table `log_metadata` (`indexed=false`, `kafkaStatus=PENDING`)
+* gRPC publishes the log bytes to Kafka topic `logs.ingestion` (key: `logId`)
+* Kafka consumer (group `log-consumer`) batches messages (batch size `50`) and indexes into Elasticsearch index `logs`
+* Note: the current code tracks `kafkaStatus` (SENT/FAILED) but does not flip `indexed=true` after Elasticsearch indexing
+
+---
+
+## 🧩 gRPC API
+
+* Service: `LogService`
+* `IngestLog(LogRequest) returns (LogResponse)` (single request)
+* `BulkIngest(stream LogRequest) returns (LogSummary)` (client-streaming)
+* `LogRequest` fields: `log_id`, `level`, `service_name`, `trace_id`, `message`, `timestamp`
+* Server behavior: if `timestamp` is blank, it uses `Instant.now()`
 
 ---
 
 ## 🛠️ Tech Stack
 
 * Java (Spring Boot)
+* Spring gRPC
+* Protocol Buffers
 * Apache Kafka
-* gRPC
+* PostgreSQL (Spring Data JPA / Hibernate)
 * Elasticsearch
-* Hibernate (JPA)
 
 ---
 
@@ -41,18 +64,18 @@ A scalable backend system designed to **collect, process, and monitor logs in re
 
 ```bash
 log-aggregation-monitoring-system/
-│
-├── log-aggregation-monitoring-system-server/
-│   ├── config/
-│   ├── kafka/
-│   ├── grpc/
-│   ├── elasticsearch/
-│   ├── model/
-│   ├── repository/
-│   └── proto/
-│
-├── application.yml
-└── pom.xml
+├── images/
+├── log-aggregation-proto/
+│   └── src/main/proto/log_aggregation.proto
+└── log-aggregation-montioring-system-server/
+    ├── pom.xml
+    └── src/main/java/com/ritesh/log_aggregation_montioring_system_server/
+        ├── grpc/
+        ├── kafka/
+        ├── elasticsearch/
+        ├── model/
+        ├── repository/
+        └── config/
 ```
 
 ---
@@ -60,15 +83,20 @@ log-aggregation-monitoring-system/
 ## ⚙️ Setup & Run
 
 ### 1. Start Dependencies
+* Kafka broker at `localhost:9092` (Zookeeper depends on your Kafka setup)
+* Elasticsearch (typically `http://localhost:9200`, unless configured)
+* PostgreSQL configured for JPA entity `log_metadata`
 
-* Kafka (with Zookeeper)
-* Elasticsearch
-
-### 2. Run Application
+### 2. Build & Run
 
 ```bash
-mvn spring-boot:run
+cd "log-aggregation-proto" && ./mvnw -q clean package
+cd "../log-aggregation-montioring-system-server" && ./mvnw spring-boot:run
 ```
+
+> Note:
+> * Kafka topic/group and bootstrap server are currently hard-coded (`my_topic`, `group_id`, `localhost:9092`).
+> * Add `application.yml` or `application.properties` inside `log-aggregation-montioring-system-server/` for Elasticsearch + PostgreSQL connection settings.
 
 ---
 
@@ -82,8 +110,8 @@ mvn spring-boot:run
 
 **Description:**
 
-* Logs are consumed one by one
-* Each log is indexed immediately
+* Intended baseline: per-log indexing
+* In this repo, per-log indexing is disabled and batching is used (`batch.size() >= 50`)
 
 **Result:**
 

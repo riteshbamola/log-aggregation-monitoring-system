@@ -17,7 +17,7 @@ public class LogProducer {
 
 
 
-    private static final String TOPIC = "my_topic";
+    private static final String TOPIC = "logs.ingestion";
     private final KafkaTemplate<String, byte[]> kafkaTemplate;
 
     public LogProducer(KafkaTemplate<String, byte[]> kafkaTemplate) {

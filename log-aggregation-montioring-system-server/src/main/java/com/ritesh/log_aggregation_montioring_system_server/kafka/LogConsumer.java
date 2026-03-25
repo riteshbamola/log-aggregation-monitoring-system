@@ -22,7 +22,7 @@ public class LogConsumer {
     private int count=0;
     private List<LogDocument> batch = new ArrayList<>();
 
-    @KafkaListener(topics = "my_topic", groupId = "group_id")
+    @KafkaListener(topics = "logs.ingestion", groupId = "log-consumer")
     public void consumeLog(byte[] message, Acknowledgment acknowledgment) {
         try {
 
