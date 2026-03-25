@@ -10,6 +10,8 @@ import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class LogConsumer {
@@ -18,6 +20,7 @@ public class LogConsumer {
     private LogIndexService logIndexService;
     private long  start = 0;
     private int count=0;
+    private List<LogDocument> batch = new ArrayList<>();
 
     @KafkaListener(topics = "my_topic", groupId = "group_id")
     public void consumeLog(byte[] message, Acknowledgment acknowledgment) {
@@ -29,9 +32,16 @@ public class LogConsumer {
 
             LogRequest logRequest = LogRequest.parseFrom(message);
             LogDocument logDocument = buildLogDocument(logRequest);
-            logIndexService.saveIndex(logDocument);
-            acknowledgment.acknowledge();
+            batch.add(logDocument);
             count++;
+//            logIndexService.saveIndex(logDocument);
+
+            acknowledgment.acknowledge();
+            if(batch.size() >= 50){
+                logIndexService.saveAll(batch);
+                batch.clear();
+            }
+
 
             if(count >= 500){
                 long end = System.currentTimeMillis();

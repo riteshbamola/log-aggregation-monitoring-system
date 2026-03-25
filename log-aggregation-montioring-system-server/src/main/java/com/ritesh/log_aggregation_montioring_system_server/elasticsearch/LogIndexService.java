@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class LogIndexService {
 
@@ -20,6 +22,9 @@ public class LogIndexService {
 
     public void saveIndex(LogDocument doc) {
         logDocumentRepo.save(doc);
+    }
+    public void saveAll(List<LogDocument> batch){
+        logDocumentRepo.saveAll(batch);
     }
 
 }
