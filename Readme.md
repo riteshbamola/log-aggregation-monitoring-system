@@ -127,7 +127,7 @@ cd "../log-aggregation-montioring-system-server" && ./mvnw spring-boot:run
 
 ### 📦 2. Batch Processing Test (Optimization Step 1)
 
-![Batch Test](./images/BatchTest.png)
+![Batch Test](./images/Batch.png)
 
 **Logic:**
 
