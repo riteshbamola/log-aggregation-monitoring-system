@@ -6,6 +6,7 @@ import com.ritesh.log_aggregation_montioring_system_server.model.LogDocument;
 import com.ritesh.log_aggregation_proto.LogRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -16,16 +17,22 @@ public class LogConsumer {
     @Autowired
     private LogIndexService logIndexService;
 
+
     @KafkaListener(topics = "my_topic", groupId = "group_id")
-    public void consumeLog(byte[] message) throws InvalidProtocolBufferException {
-        LogRequest logRequest = LogRequest.parseFrom(message);
-        LogDocument logDocument = buildLogDocument(logRequest);
+    public void consumeLog(byte[] message, Acknowledgment acknowledgment) {
 
-        logIndexService.saveIndex(logDocument);
+        try {
+            LogRequest logRequest = LogRequest.parseFrom(message);
+            LogDocument logDocument = buildLogDocument(logRequest);
 
-        System.out.println("Message received: " + logDocument);
+            logIndexService.saveIndex(logDocument);
+            acknowledgment.acknowledge();
+
+        } catch (Exception e) {
+            System.err.println("❌ FAILED: ");
+            e.printStackTrace();
+        }
     }
-
 
     private LogDocument buildLogDocument(LogRequest logRequest) {
         return LogDocument.builder()

@@ -18,8 +18,8 @@ public class LogIndexService {
     @Autowired
     private LogDocumentRepository logDocumentRepo;
 
-    public void saveIndex(LogDocument logDocument){
-        logDocumentRepo.save(logDocument);
+    public void saveIndex(LogDocument doc) {
+        logDocumentRepo.save(doc);
     }
 
 }

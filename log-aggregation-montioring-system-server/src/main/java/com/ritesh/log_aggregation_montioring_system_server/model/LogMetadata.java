@@ -21,7 +21,6 @@ import java.time.LocalDateTime;
 public class LogMetadata {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private String logId;
     private String level;
     private String serviceName;
