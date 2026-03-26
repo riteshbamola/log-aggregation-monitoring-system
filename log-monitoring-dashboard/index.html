@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Log Dashboard</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Courier New', monospace; background: #0d0f12; color: #c9d1d9; font-size: 13px; height: 100vh; display: flex; flex-direction: column; }
+
+.topbar {
+  display: flex; align-items: center; gap: 12px; padding: 10px 16px;
+  background: #161b22; border-bottom: 1px solid #30363d; flex-wrap: wrap;
+}
+.logo { font-size: 15px; font-weight: 700; color: #58a6ff; letter-spacing: 1px; }
+
+select, input[type=text] {
+  background: #0d1117; border: 1px solid #30363d; color: #c9d1d9;
+  padding: 5px 10px; border-radius: 6px; font-family: 'Courier New', monospace;
+  font-size: 12px; outline: none;
+}
+select:focus, input:focus { border-color: #58a6ff; }
+
+button {
+  padding: 5px 14px; border-radius: 6px; font-size: 12px; cursor: pointer;
+  font-family: 'Courier New', monospace; border: 1px solid #30363d;
+  background: #21262d; color: #c9d1d9; transition: background .15s;
+}
+button:hover { background: #30363d; }
+button.primary { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+button.primary:hover { background: #388bfd; }
+
+.stats {
+  display: flex; gap: 1px; background: #30363d;
+  border-bottom: 1px solid #30363d;
+}
+.stat { flex: 1; padding: 10px 16px; background: #161b22; text-align: center; }
+.stat-num { font-size: 22px; font-weight: 700; line-height: 1; }
+.stat-label { font-size: 11px; color: #8b949e; margin-top: 3px; text-transform: uppercase; letter-spacing: .5px; }
+.c-all { color: #58a6ff; }
+.c-err { color: #f85149; }
+.c-warn { color: #d29922; }
+.c-info { color: #3fb950; }
+
+.toolbar {
+  display: flex; align-items: center; gap: 8px; padding: 8px 16px;
+  background: #161b22; border-bottom: 1px solid #30363d; flex-wrap: wrap;
+}
+.spacer { flex: 1; }
+
+.live-badge {
+  display: flex; align-items: center; gap: 6px; font-size: 11px;
+  color: #3fb950; padding: 4px 10px; border: 1px solid #238636;
+  border-radius: 12px; background: #0d2a12;
+}
+.live-badge.off { color: #8b949e; border-color: #30363d; background: transparent; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: #3fb950; animation: pulse 2s infinite; display: inline-block; }
+.dot.off { background: #30363d; animation: none; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+.log-container { flex: 1; overflow-y: auto; }
+.log-container::-webkit-scrollbar { width: 6px; }
+.log-container::-webkit-scrollbar-track { background: #0d0f12; }
+.log-container::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+
+table { width: 100%; border-collapse: collapse; }
+thead { position: sticky; top: 0; z-index: 10; }
+th {
+  background: #161b22; color: #8b949e; font-weight: 500;
+  padding: 8px 12px; text-align: left; font-size: 11px;
+  text-transform: uppercase; letter-spacing: .5px;
+  border-bottom: 1px solid #30363d;
+}
+td { padding: 6px 12px; border-bottom: 1px solid #1c2128; vertical-align: top; }
+tr:hover td { background: #161b22; }
+
+.level {
+  display: inline-block; padding: 1px 7px; border-radius: 4px;
+  font-size: 11px; font-weight: 700; min-width: 46px; text-align: center;
+}
+.level-ERROR { background: #3d1010; color: #f85149; border: 1px solid #6e1c1c; }
+.level-WARN  { background: #2d2010; color: #d29922; border: 1px solid #5a3e10; }
+.level-INFO  { background: #0d2215; color: #3fb950; border: 1px solid #1a4d2e; }
+.level-DEBUG { background: #1a1e2a; color: #79c0ff; border: 1px solid #1f3a5a; }
+
+.svc   { color: #79c0ff; }
+.trace { color: #8b949e; font-size: 11px; }
+.ts    { color: #8b949e; white-space: nowrap; }
+.msg   { color: #e6edf3; word-break: break-all; }
+.msg.err { color: #f85149; }
+
+.row-err td  { background: #160b0b; }
+.row-warn td { background: #16120a; }
+
+.empty { text-align: center; padding: 60px; color: #8b949e; }
+
+.footer {
+  padding: 6px 16px; background: #161b22; border-top: 1px solid #30363d;
+  display: flex; align-items: center; gap: 12px; font-size: 11px; color: #8b949e;
+}
+#status.ok  { color: #3fb950; }
+#status.err { color: #f85149; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="logo">◈ LOGWATCH</span>
+  <input type="text" id="index" value="logs" style="width:110px" placeholder="Index">
+  <select id="time-filter" onchange="fetchLogs()">
+    <option value="5m">Last 5 min</option>
+    <option value="15m">Last 15 min</option>
+    <option value="1h">Last 1 hour</option>
+    <option value="6h">Last 6 hours</option>
+    <option value="24h">Last 24 hours</option>
+    <option value="7d" selected>Last 1 week</option>
+  </select>
+  <button class="primary" onclick="fetchLogs()">Refresh</button>
+  <div class="spacer"></div>
+  <input type="text" id="search" placeholder="Search messages, trace ID..." style="width:220px" oninput="applyFilters()">
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="stat-num c-all" id="s-total">—</div><div class="stat-label">Total</div></div>
+  <div class="stat"><div class="stat-num c-err"  id="s-error">—</div><div class="stat-label">Errors</div></div>
+  <div class="stat"><div class="stat-num c-warn" id="s-warn">—</div><div class="stat-label">Warnings</div></div>
+  <div class="stat"><div class="stat-num c-info" id="s-info">—</div><div class="stat-label">Info</div></div>
+</div>
+
+<div class="toolbar">
+  <select id="level-filter" onchange="applyFilters()">
+    <option value="">All Levels</option>
+    <option value="ERROR">ERROR</option>
+    <option value="WARN">WARN</option>
+    <option value="INFO">INFO</option>
+    <option value="DEBUG">DEBUG</option>
+  </select>
+  <select id="svc-filter" onchange="applyFilters()">
+    <option value="">All Services</option>
+  </select>
+  <select id="sort-filter" onchange="applyFilters()">
+    <option value="">Sort: Timestamp ↓</option>
+    <option value="trace_asc">Sort: Trace ID A→Z</option>
+    <option value="trace_desc">Sort: Trace ID Z→A</option>
+  </select>
+  <div class="spacer"></div>
+  <button onclick="toggleLive()" id="live-btn">▶ Live</button>
+  <div class="live-badge off" id="live-badge"><span class="dot off"></span> LIVE OFF</div>
+</div>
+
+<div class="log-container">
+  <table>
+    <thead>
+      <tr>
+        <th style="width:160px">Timestamp</th>
+        <th style="width:70px">Level</th>
+        <th style="width:150px">Service</th>
+        <th style="width:150px">Trace ID</th>
+        <th>Message</th>
+      </tr>
+    </thead>
+    <tbody id="log-body">
+      <tr><td colspan="5" class="empty">Click Refresh to load logs from Elasticsearch</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="footer">
+  <span id="status">● Not connected</span>
+  <div class="spacer"></div>
+  <span id="log-count"></span>
+  &nbsp;
+  <span id="last-updated"></span>
+</div>
+
+<script>
+const ES = 'http://localhost:9200';
+let allLogs = [];
+let liveInterval = null;
+let isLive = false;
+
+function fmtTs(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) + ' ' + d.toTimeString().slice(0, 8);
+}
+
+async function fetchLogs() {
+  const index = document.getElementById('index').value || 'logs-*';
+  const time  = document.getElementById('time-filter').value;
+
+  const query = {
+    size: 1000,
+    sort: [{ "timestamp": { order: "desc" } }],
+    query: {
+      range: { timestamp: { gte: `now-${time}` } }
+    }
+  };
+
+  try {
+    const res = await fetch(`${ES}/${index}/_search`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(query)
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const data = await res.json();
+
+    allLogs = data.hits.hits.map(h => ({
+      log_id:    h._source.log_id   || h._id,
+      timestamp: h._source.timestamp,
+      level:     (h._source.level   || 'INFO').toUpperCase(),
+      service:   h._source.service_name || 'unknown',
+      trace_id:  h._source.trace_id || '—',
+      message:   h._source.message
+    }));
+
+    updateStats(allLogs);
+    updateServices(allLogs);
+    applyFilters();
+
+    const status = document.getElementById('status');
+    status.className = 'ok';
+    status.textContent = `● Connected — ${allLogs.length} logs`;
+    document.getElementById('last-updated').textContent = 'Updated ' + new Date().toTimeString().slice(0, 8);
+
+  } catch (e) {
+    const status = document.getElementById('status');
+    status.className = 'err';
+    status.textContent = '● ' + e.message;
+  }
+}
+
+function updateStats(logs) {
+  document.getElementById('s-total').textContent = logs.length;
+  document.getElementById('s-error').textContent = logs.filter(l => l.level === 'ERROR').length;
+  document.getElementById('s-warn').textContent  = logs.filter(l => l.level === 'WARN').length;
+  document.getElementById('s-info').textContent  = logs.filter(l => l.level === 'INFO').length;
+}
+
+function updateServices(logs) {
+  const svcs = [...new Set(logs.map(l => l.service))].sort();
+  const sel = document.getElementById('svc-filter');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">All Services</option>' +
+    svcs.map(s => `<option value="${s}" ${s === cur ? 'selected' : ''}>${s}</option>`).join('');
+}
+
+function applyFilters() {
+  const level  = document.getElementById('level-filter').value;
+  const svc    = document.getElementById('svc-filter').value;
+  const search = document.getElementById('search').value.toLowerCase();
+
+  let filtered = allLogs;
+  if (level)  filtered = filtered.filter(l => l.level === level);
+  if (svc)    filtered = filtered.filter(l => l.service === svc);
+  if (search) filtered = filtered.filter(l =>
+    l.message.toLowerCase().includes(search) ||
+    l.service.toLowerCase().includes(search) ||
+    l.trace_id.toLowerCase().includes(search)
+  );
+
+  const sort = document.getElementById('sort-filter').value;
+  if (sort === 'trace_asc')  filtered.sort((a, b) => a.trace_id.localeCompare(b.trace_id));
+  if (sort === 'trace_desc') filtered.sort((a, b) => b.trace_id.localeCompare(a.trace_id));
+
+  renderLogs(filtered);
+  document.getElementById('log-count').textContent = `${filtered.length} / ${allLogs.length} logs`;
+}
+
+function renderLogs(logs) {
+  const body = document.getElementById('log-body');
+  if (!logs.length) {
+    body.innerHTML = '<tr><td colspan="5" class="empty">No logs match your filters</td></tr>';
+    return;
+  }
+  body.innerHTML = logs.map(l => {
+    const rowCls = l.level === 'ERROR' ? 'row-err' : l.level === 'WARN' ? 'row-warn' : '';
+    const msgCls = l.level === 'ERROR' ? 'msg err' : 'msg';
+    return `<tr class="${rowCls}">
+      <td class="ts">${fmtTs(l.timestamp)}</td>
+      <td><span class="level level-${l.level}">${l.level}</span></td>
+      <td class="svc">${l.service}</td>
+      <td class="trace">${l.trace_id}</td>
+      <td class="${msgCls}">${l.message}</td>
+    </tr>`;
+  }).join('');
+}
+
+function toggleLive() {
+  isLive = !isLive;
+  const btn   = document.getElementById('live-btn');
+  const badge = document.getElementById('live-badge');
+
+  if (isLive) {
+    btn.textContent = '⏹ Stop';
+    badge.className = 'live-badge';
+    badge.innerHTML = '<span class="dot"></span> LIVE ON';
+    liveInterval = setInterval(fetchLogs, 5000);
+    fetchLogs();
+  } else {
+    btn.textContent = '▶ Live';
+    badge.className = 'live-badge off';
+    badge.innerHTML = '<span class="dot off"></span> LIVE OFF';
+    clearInterval(liveInterval);
+  }
+}
+</script>
+</body>
+</html>
